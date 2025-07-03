@@ -13,25 +13,28 @@ class Recorder {
     enum RecordingState {
         case recording, paused, stopped
     }
+    private var currentSegmentURL: URL!
+    private var recordingFile: AVAudioFile?
+    private var segmentTimer: Timer?
+    private var recordingStartTime: Date?
+    private var fileSegmentIndex: Int = 0
+    private var inputFormat: AVAudioFormat!
+    
     private var engine: AVAudioEngine!
-    private var mixerNode: AVAudioMixerNode!
     private var state: RecordingState = .stopped
     
     var recordings = [Recording]()
     var recording = false
     
-    var compressedBuffer: AVAudioCompressedBuffer?
     
     fileprivate var isInterrupted = false
     fileprivate var configChangePending = false
     fileprivate var routeChangeNotification = false
     
     var modelContext: ModelContext?
-    private var converter: AVAudioConverter?
+
     init(modelContext: ModelContext? = nil) {
         self.modelContext = modelContext
-        setupSession()
-        setupEngine()
         registerForNotifications()
     }
     fileprivate func setupSession() {
@@ -41,101 +44,69 @@ class Recorder {
     }
     fileprivate func setupEngine() {
         engine = AVAudioEngine()
-        mixerNode = AVAudioMixerNode()
-        
-        // Set volume to 0 to avoid audio feedback while recording.
-        mixerNode.volume = 0
-        
-        engine.attach(mixerNode)
-        
-        makeConnections()
-        
-        // Prepare the engine in advance, in order for the system to allocate the necessary resources.
         engine.prepare()
     }
-    
     fileprivate func makeConnections() {
         let inputNode = engine.inputNode
-        let inputFormat = inputNode.outputFormat(forBus: 0)
-        engine.connect(inputNode, to: mixerNode, format: inputFormat)
-        
-        let mainMixerNode = engine.mainMixerNode
-        let mixerFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: inputFormat.sampleRate, channels: 1, interleaved: false)
-        engine.connect(mixerNode, to: mainMixerNode, format: mixerFormat)
+        inputFormat = inputNode.outputFormat(forBus: 0) // Save it
+
+        //engine.connect(inputNode, to: mixerNode, format: inputFormat)
+
+//        let mainMixerNode = engine.mainMixerNode
+//        engine.connect(mixerNode, to: mainMixerNode, format: inputFormat) // use same format
     }
    
     func startRecording() throws {
-        let tapNode: AVAudioNode = mixerNode
-        let format = tapNode.outputFormat(forBus: 0)
-      
-        var outDesc = AudioStreamBasicDescription()
-        outDesc.mSampleRate = format.sampleRate
-        outDesc.mChannelsPerFrame = 1
-        outDesc.mFormatID = kAudioFormatMPEG4AAC
+        try AVAudioSession.sharedInstance().setActive(true, options: [.notifyOthersOnDeactivation])
         
-        let framesPerPacket: UInt32 = 1152
-        outDesc.mFramesPerPacket = framesPerPacket
-        outDesc.mBitsPerChannel = 24
-        outDesc.mBytesPerPacket = 0
-        
-        let convertFormat = AVAudioFormat(streamDescription: &outDesc)!
-        self.converter = AVAudioConverter(from: format, to: convertFormat)
-        
-        let packetSize: UInt32 = 8
-        let bufferSize = framesPerPacket * packetSize
-        
-        tapNode.installTap(onBus: 0, bufferSize: bufferSize, format: format) { [weak self] buffer, time in
-            guard let self = self, let converter = self.converter else { return }
-            let compressedBuffer = AVAudioCompressedBuffer(
-                format: convertFormat,
-                packetCapacity: packetSize,
-                maximumPacketSize: converter.maximumOutputPacketSize
-            )
-            let inputBlock: AVAudioConverterInputBlock = { _, outStatus in
-                outStatus.pointee = .haveData
-                return buffer
+        makeConnections()
+
+        let inputNode = engine.inputNode
+        let format = inputNode.outputFormat(forBus: 0)
+
+        currentSegmentURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".caf")
+        recordingFile = try AVAudioFile(forWriting: currentSegmentURL, settings: format.settings)
+
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
+            guard let self = self else { return }
+
+            do {
+                try self.recordingFile?.write(from: buffer)
+            } catch {
+                print("❌ Failed to write audio buffer: \(error)")
             }
-
-            var outError: NSError?
-            converter.convert(to: compressedBuffer, error: &outError, withInputFrom: inputBlock)
-
-            if let error = outError {
-                print("❌ Conversion error: \(error.localizedDescription)")
-                return
-            }
-
-            self.compressedBuffer = compressedBuffer
-            self.saveRecording(from: compressedBuffer)
         }
-        
+
         try engine.start()
         state = .recording
+        recording = true
+
+        scheduleNextSegment()
     }
-    
-    private func saveRecording(from buffer: AVAudioCompressedBuffer) {
-        let audioBuffer = buffer.audioBufferList.pointee.mBuffers
-        guard let mData = audioBuffer.mData else {
-            print("⚠️ No data to save")
-            return
+    private func scheduleNextSegment() {
+        segmentTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+            try? self?.rotateSegment()
+        }
+    }
+
+    private func rotateSegment() throws {
+        engine.inputNode.removeTap(onBus: 0)
+        try saveCurrentSegment()
+
+        fileSegmentIndex += 1
+        try startRecording() // recursively start next segment
+    }
+    private func saveCurrentSegment() throws {
+        guard let file = recordingFile else { return }
+        let savedURL = file.url
+
+        if let context = modelContext {
+            let newRecording = Recording(fileURL: savedURL, createdAt: Date())
+            context.insert(newRecording)
+            try? context.save()
         }
 
-        let length = Int(audioBuffer.mDataByteSize)
-        let data = NSData(bytes: mData, length: length)
-        let filename = UUID().uuidString + ".m4a"
-        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
-
-        do {
-            try data.write(to: fileURL)
-            print("✅ Saved audio to: \(fileURL.path)")
-
-            if let context = modelContext {
-                let newRecording = Recording(fileURL: fileURL, createdAt: Date())
-                context.insert(newRecording)
-                try? context.save()
-            }
-        } catch {
-            print("❌ Save error: \(error.localizedDescription)")
-        }
+        recordingFile = nil
     }
     func resumeRecording() throws {
         try engine.start()
@@ -146,12 +117,13 @@ class Recorder {
         engine.pause()
         state = .paused
     }
-    
     func stopRecording() {
-        mixerNode.removeTap(onBus: 0)
+        engine.inputNode.removeTap(onBus: 0)
         engine.stop()
-        converter?.reset()
+        segmentTimer?.invalidate()
+        try? saveCurrentSegment()
         state = .stopped
+        recording = false
     }
     fileprivate func registerForNotifications() {
         NotificationCenter.default.addObserver(
@@ -248,6 +220,19 @@ class Recorder {
         }
         
         configChangePending = false
+    }
+    func setup() {
+        AVAudioSession.sharedInstance().requestRecordPermission { granted in
+            DispatchQueue.main.async {
+                if granted {
+                    self.setupSession()
+                    self.setupEngine()
+                    self.registerForNotifications()
+                } else {
+                    print("❌ Microphone permission denied.")
+                }
+            }
+        }
     }
 }
 

@@ -51,6 +51,7 @@ struct RecordingView: View {
                 if Recorder.modelContext == nil {
                     Recorder.modelContext = modelContext
                 }
+                Recorder.setup()  
                 
             }
         }
