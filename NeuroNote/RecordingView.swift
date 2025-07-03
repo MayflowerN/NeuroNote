@@ -19,11 +19,15 @@ struct RecordingView: View {
                 RecordingList(Recorder: Recorder)
                 if Recorder.recording == false {
                     Button(action: {
-                        do {
-                            try self.Recorder.startRecording()
-                            self.Recorder.recording = true
-                        } catch {
-                            print("Failed to start recording: \(error.localizedDescription)")
+                        if Recorder.isReady {
+                            do {
+                                try self.Recorder.startRecording()
+                                self.Recorder.recording = true
+                            } catch {
+                                print("Failed to start recording: \(error.localizedDescription)")
+                            }
+                        } else {
+                            print("❌ Recorder not ready yet. Microphone permission may still be pending.")
                         }
                     }) {
                         Image(systemName: "circle.fill")

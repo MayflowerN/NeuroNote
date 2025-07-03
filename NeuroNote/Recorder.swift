@@ -25,7 +25,7 @@ class Recorder {
     
     var recordings = [Recording]()
     var recording = false
-    
+    var isReady = false
     
     fileprivate var isInterrupted = false
     fileprivate var configChangePending = false
@@ -35,15 +35,32 @@ class Recorder {
 
     init(modelContext: ModelContext? = nil) {
         self.modelContext = modelContext
-        registerForNotifications()
+
+        AVAudioSession.sharedInstance().requestRecordPermission { granted in
+            DispatchQueue.main.async {
+                if granted {
+                    self.setupSession()
+                    self.setupEngine()
+                    self.registerForNotifications()
+                    self.isReady = true
+                } else {
+                    print("❌ Microphone permission denied.")
+                }
+            }
+        }
     }
     fileprivate func setupSession() {
         let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.record)
+        try? session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetooth])
+        try? session.setPreferredSampleRate(44100) // Safe standard
         try? session.setActive(true, options: .notifyOthersOnDeactivation)
     }
     fileprivate func setupEngine() {
         engine = AVAudioEngine()
+        let input = engine.inputNode
+        let format = input.inputFormat(forBus: 0)
+
+        engine.connect(input, to: engine.mainMixerNode, format: format)
         engine.prepare()
     }
     fileprivate func makeConnections() {
@@ -55,32 +72,29 @@ class Recorder {
 //        let mainMixerNode = engine.mainMixerNode
 //        engine.connect(mixerNode, to: mainMixerNode, format: inputFormat) // use same format
     }
-   
     func startRecording() throws {
+        guard !recording else { return }
+
         try AVAudioSession.sharedInstance().setActive(true, options: [.notifyOthersOnDeactivation])
-        
-        makeConnections()
 
         let inputNode = engine.inputNode
-        let format = inputNode.outputFormat(forBus: 0)
+        let format = inputNode.inputFormat(forBus: 0)
 
         currentSegmentURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".caf")
         recordingFile = try AVAudioFile(forWriting: currentSegmentURL, settings: format.settings)
 
+        // REMOVE existing tap if needed
+        inputNode.removeTap(onBus: 0)
+
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
             guard let self = self else { return }
-
-            do {
-                try self.recordingFile?.write(from: buffer)
-            } catch {
-                print("❌ Failed to write audio buffer: \(error)")
-            }
+            try? self.recordingFile?.write(from: buffer)
         }
 
         try engine.start()
+
         state = .recording
         recording = true
-
         scheduleNextSegment()
     }
     private func scheduleNextSegment() {
