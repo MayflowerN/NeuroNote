@@ -7,13 +7,6 @@
 	objects = {
 
 /* Begin PBXContainerItemProxy section */
-		9A612F5D2E14CEFF00CD13E3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 9A612F472E14CEFD00CD13E3 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 9A612F4E2E14CEFD00CD13E3;
-			remoteInfo = NeuroNote;
-		};
 		9A612F672E14CEFF00CD13E3 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 9A612F472E14CEFD00CD13E3 /* Project object */;
@@ -25,7 +18,6 @@
 
 /* Begin PBXFileReference section */
 		9A612F4F2E14CEFD00CD13E3 /* NeuroNote.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NeuroNote.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		9A612F5C2E14CEFF00CD13E3 /* NeuroNoteTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NeuroNoteTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A612F662E14CEFF00CD13E3 /* NeuroNoteUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NeuroNoteUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -68,13 +60,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		9A612F592E14CEFF00CD13E3 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		9A612F632E14CEFF00CD13E3 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -99,7 +84,6 @@
 			isa = PBXGroup;
 			children = (
 				9A612F4F2E14CEFD00CD13E3 /* NeuroNote.app */,
-				9A612F5C2E14CEFF00CD13E3 /* NeuroNoteTests.xctest */,
 				9A612F662E14CEFF00CD13E3 /* NeuroNoteUITests.xctest */,
 			);
 			name = Products;
@@ -129,29 +113,6 @@
 			productName = NeuroNote;
 			productReference = 9A612F4F2E14CEFD00CD13E3 /* NeuroNote.app */;
 			productType = "com.apple.product-type.application";
-		};
-		9A612F5B2E14CEFF00CD13E3 /* NeuroNoteTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 9A612F732E14CEFF00CD13E3 /* Build configuration list for PBXNativeTarget "NeuroNoteTests" */;
-			buildPhases = (
-				9A612F582E14CEFF00CD13E3 /* Sources */,
-				9A612F592E14CEFF00CD13E3 /* Frameworks */,
-				9A612F5A2E14CEFF00CD13E3 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				9A612F5E2E14CEFF00CD13E3 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				9A612F5F2E14CEFF00CD13E3 /* NeuroNoteTests */,
-			);
-			name = NeuroNoteTests;
-			packageProductDependencies = (
-			);
-			productName = NeuroNoteTests;
-			productReference = 9A612F5C2E14CEFF00CD13E3 /* NeuroNoteTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		9A612F652E14CEFF00CD13E3 /* NeuroNoteUITests */ = {
 			isa = PBXNativeTarget;
@@ -189,10 +150,6 @@
 					9A612F4E2E14CEFD00CD13E3 = {
 						CreatedOnToolsVersion = 16.4;
 					};
-					9A612F5B2E14CEFF00CD13E3 = {
-						CreatedOnToolsVersion = 16.4;
-						TestTargetID = 9A612F4E2E14CEFD00CD13E3;
-					};
 					9A612F652E14CEFF00CD13E3 = {
 						CreatedOnToolsVersion = 16.4;
 						TestTargetID = 9A612F4E2E14CEFD00CD13E3;
@@ -214,7 +171,6 @@
 			projectRoot = "";
 			targets = (
 				9A612F4E2E14CEFD00CD13E3 /* NeuroNote */,
-				9A612F5B2E14CEFF00CD13E3 /* NeuroNoteTests */,
 				9A612F652E14CEFF00CD13E3 /* NeuroNoteUITests */,
 			);
 		};
@@ -222,13 +178,6 @@
 
 /* Begin PBXResourcesBuildPhase section */
 		9A612F4D2E14CEFD00CD13E3 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		9A612F5A2E14CEFF00CD13E3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -252,13 +201,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		9A612F582E14CEFF00CD13E3 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		9A612F622E14CEFF00CD13E3 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -269,11 +211,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		9A612F5E2E14CEFF00CD13E3 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 9A612F4E2E14CEFD00CD13E3 /* NeuroNote */;
-			targetProxy = 9A612F5D2E14CEFF00CD13E3 /* PBXContainerItemProxy */;
-		};
 		9A612F682E14CEFF00CD13E3 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 9A612F4E2E14CEFD00CD13E3 /* NeuroNote */;
@@ -408,9 +345,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9FKHFCQNJL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NeuroNote/Info.plist;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We need access to your microphone to record voice notes.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -434,11 +373,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9FKHFCQNJL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NeuroNote/Info.plist;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We need access to your microphone to record voice notes.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -451,45 +393,10 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.codewithellie.NeuroNote;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		9A612F742E14CEFF00CD13E3 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.codewithellie.NeuroNoteTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NeuroNote.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NeuroNote";
-			};
-			name = Debug;
-		};
-		9A612F752E14CEFF00CD13E3 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.codewithellie.NeuroNoteTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NeuroNote.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NeuroNote";
 			};
 			name = Release;
 		};
@@ -498,6 +405,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9FKHFCQNJL;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.codewithellie.NeuroNoteUITests;
@@ -512,8 +420,10 @@
 		9A612F782E14CEFF00CD13E3 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9FKHFCQNJL;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.codewithellie.NeuroNoteUITests;
@@ -542,15 +452,6 @@
 			buildConfigurations = (
 				9A612F712E14CEFF00CD13E3 /* Debug */,
 				9A612F722E14CEFF00CD13E3 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		9A612F732E14CEFF00CD13E3 /* Build configuration list for PBXNativeTarget "NeuroNoteTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				9A612F742E14CEFF00CD13E3 /* Debug */,
-				9A612F752E14CEFF00CD13E3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

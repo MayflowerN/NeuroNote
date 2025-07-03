@@ -14,39 +14,49 @@ struct RecordingView: View {
     
     @Environment(\.modelContext) var modelContext
     var body: some View {
-        VStack {
-            RecordingList(Recorder: Recorder)
-            if Recorder.recording == false {
-                Button(action: {
-                    do {
-                        try self.Recorder.startRecording()
-                        self.Recorder.recording = true
-                    } catch {
-                        print("Failed to start recording: \(error.localizedDescription)")
+        NavigationStack {
+            VStack {
+                RecordingList(Recorder: Recorder)
+                if Recorder.recording == false {
+                    Button(action: {
+                        do {
+                            try self.Recorder.startRecording()
+                            self.Recorder.recording = true
+                        } catch {
+                            print("Failed to start recording: \(error.localizedDescription)")
+                        }
+                    }) {
+                        Image(systemName: "circle.fill")
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 100, height: 100)
+                            .clipped()
+                            .foregroundColor(.red)
+                            .padding(.bottom, 40)
                     }
-                }) {
-                    Image(systemName: "circle.fill")
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 100, height: 100)
-                        .clipped()
-                        .foregroundColor(.red)
-                        .padding(.bottom, 40)
-                }
-            } else {
-                Button(action: {self.Recorder.stopRecording()}) {
-                    Image(systemName: "stop.fill")
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 100, height: 100)
-                        .clipped()
-                        .foregroundColor(.red)
-                        .padding(.bottom, 40)
+                } else {
+                    Button(action: {self.Recorder.stopRecording()}) {
+                        Image(systemName: "stop.fill")
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 100, height: 100)
+                            .clipped()
+                            .foregroundColor(.red)
+                            .padding(.bottom, 40)
+                    }
                 }
             }
+            .navigationTitle("Voice recorder")
+            .onAppear {
+                if Recorder.modelContext == nil {
+                    Recorder.modelContext = modelContext
+                }
+                
+            }
         }
-            .navigationBarTitle("Voice recorder")
+        
     }
+    
 }
 //#Preview {
 //    RecordingView()

@@ -20,15 +20,15 @@ class Recorder {
     var recordings = [Recording]()
     var recording = false
     
-    var converter: AVAudioConverter!
     var compressedBuffer: AVAudioCompressedBuffer?
     
     fileprivate var isInterrupted = false
     fileprivate var configChangePending = false
     fileprivate var routeChangeNotification = false
     
-    private var modelContext: ModelContext?
-    init() {
+    var modelContext: ModelContext?
+    private var converter: AVAudioConverter?
+    init(modelContext: ModelContext? = nil) {
         self.modelContext = modelContext
         setupSession()
         setupEngine()
@@ -63,14 +63,15 @@ class Recorder {
         let mixerFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: inputFormat.sampleRate, channels: 1, interleaved: false)
         engine.connect(mixerNode, to: mainMixerNode, format: mixerFormat)
     }
+   
     func startRecording() throws {
         let tapNode: AVAudioNode = mixerNode
         let format = tapNode.outputFormat(forBus: 0)
-        
+      
         var outDesc = AudioStreamBasicDescription()
         outDesc.mSampleRate = format.sampleRate
         outDesc.mChannelsPerFrame = 1
-        outDesc.mFormatID = kAudioFormatFLAC
+        outDesc.mFormatID = kAudioFormatMPEG4AAC
         
         let framesPerPacket: UInt32 = 1152
         outDesc.mFramesPerPacket = framesPerPacket
@@ -78,68 +79,63 @@ class Recorder {
         outDesc.mBytesPerPacket = 0
         
         let convertFormat = AVAudioFormat(streamDescription: &outDesc)!
-        converter = AVAudioConverter(from: format, to: convertFormat)
+        self.converter = AVAudioConverter(from: format, to: convertFormat)
         
         let packetSize: UInt32 = 8
         let bufferSize = framesPerPacket * packetSize
         
-        tapNode.installTap(onBus: 0, bufferSize: bufferSize, format: format, block: {
-            [weak self] (buffer, time) in
-            guard let weakself = self else {
-                return
-            }
-            
-            weakself.compressedBuffer = AVAudioCompressedBuffer(
+        tapNode.installTap(onBus: 0, bufferSize: bufferSize, format: format) { [weak self] buffer, time in
+            guard let self = self, let converter = self.converter else { return }
+            let compressedBuffer = AVAudioCompressedBuffer(
                 format: convertFormat,
                 packetCapacity: packetSize,
-                maximumPacketSize: weakself.converter.maximumOutputPacketSize
+                maximumPacketSize: converter.maximumOutputPacketSize
             )
-            
-            // input block is called when the converter needs input
-            let inputBlock : AVAudioConverterInputBlock = { (inNumPackets, outStatus) -> AVAudioBuffer? in
-                outStatus.pointee = AVAudioConverterInputStatus.haveData;
-                return buffer; // fill and return input buffer
+            let inputBlock: AVAudioConverterInputBlock = { _, outStatus in
+                outStatus.pointee = .haveData
+                return buffer
             }
-            
-            // Conversion loop
-            var outError: NSError? = nil
-            weakself.converter.convert(to: weakself.compressedBuffer!, error: &outError, withInputFrom: inputBlock)
-            
-            let audioBuffer = weakself.compressedBuffer!.audioBufferList.pointee.mBuffers
-            if let mData = audioBuffer.mData {
-                let length = Int(audioBuffer.mDataByteSize)
-                let data = NSData(bytes: mData, length: length)
 
-                // 1. Generate file path
-                let filename = UUID().uuidString + ".flac" // or ".caf", ".m4a", etc.
-                let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+            var outError: NSError?
+            converter.convert(to: compressedBuffer, error: &outError, withInputFrom: inputBlock)
 
-                // 2. Write audio data to disk
-                do {
-                    try data.write(to: fileURL)
-                    
-                    // 3. Create a new SwiftData Recording object
-                    let newRecording = Recording(fileURL: fileURL, createdAt: Date())
-
-                    // 4. Insert into SwiftData
-                    // You’ll need to inject the SwiftData model context here — example:
-                    if let context = self.modelContext {
-                        context.insert(newRecording)
-                        try? context.save()
-                    }
-
-                    print("Saved recording at: \(fileURL.path)")
-                } catch {
-                    print("❌ Failed to write audio file: \(error.localizedDescription)")
-                }
+            if let error = outError {
+                print("❌ Conversion error: \(error.localizedDescription)")
+                return
             }
-            else {
-                print("error")
-            }
-        })
+
+            self.compressedBuffer = compressedBuffer
+            self.saveRecording(from: compressedBuffer)
+        }
         
         try engine.start()
         state = .recording
+    }
+    
+    private func saveRecording(from buffer: AVAudioCompressedBuffer) {
+        let audioBuffer = buffer.audioBufferList.pointee.mBuffers
+        guard let mData = audioBuffer.mData else {
+            print("⚠️ No data to save")
+            return
+        }
+
+        let length = Int(audioBuffer.mDataByteSize)
+        let data = NSData(bytes: mData, length: length)
+        let filename = UUID().uuidString + ".m4a"
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+
+        do {
+            try data.write(to: fileURL)
+            print("✅ Saved audio to: \(fileURL.path)")
+
+            if let context = modelContext {
+                let newRecording = Recording(fileURL: fileURL, createdAt: Date())
+                context.insert(newRecording)
+                try? context.save()
+            }
+        } catch {
+            print("❌ Save error: \(error.localizedDescription)")
+        }
     }
     func resumeRecording() throws {
         try engine.start()
@@ -154,7 +150,7 @@ class Recorder {
     func stopRecording() {
         mixerNode.removeTap(onBus: 0)
         engine.stop()
-        converter.reset()
+        converter?.reset()
         state = .stopped
     }
     fileprivate func registerForNotifications() {
