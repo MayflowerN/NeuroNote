@@ -14,6 +14,7 @@ class Recorder {
     enum RecordingState {
         case recording, paused, stopped
     }
+    var audioLevel: Float = -120.0
     private var currentSegmentURL: URL!
     private var recordingFile: AVAudioFile?
     private var segmentTimer: Timer?
@@ -109,8 +110,20 @@ class Recorder {
         // ✅ Use input hardware format for tap
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: inputHWFormat) { [weak self] buffer, _ in
             guard let self = self else { return }
+            if let channelData = buffer.floatChannelData?[0] {
+                let frameLength = Int(buffer.frameLength)
+                
+                let bufferPointer = UnsafeBufferPointer(start: channelData, count: frameLength)
+                let squaredSamples = bufferPointer.map { $0 * $0 }
+                let meanSquare = squaredSamples.reduce(0, +) / Float(frameLength)
+                let rms = sqrt(meanSquare)
+                
+                let avgPower = 20 * log10(rms)
 
-            // 🔄 If format mismatch, convert buffer to outputFormat before writing
+                DispatchQueue.main.async {
+                    self.audioLevel = avgPower.isFinite ? avgPower : -120.0
+                }
+            }          // 🔄 If format mismatch, convert buffer to outputFormat before writing
             if buffer.format != self.recordingFile?.processingFormat {
                 let converter = AVAudioConverter(from: buffer.format, to: self.recordingFile!.processingFormat)!
                 let pcmBuffer = AVAudioPCMBuffer(pcmFormat: self.recordingFile!.processingFormat, frameCapacity: buffer.frameCapacity)!

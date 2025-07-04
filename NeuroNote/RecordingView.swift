@@ -17,6 +17,7 @@ struct RecordingView: View {
         NavigationStack {
             VStack {
                 RecordingList()
+                AudioLevelMeter(level: Recorder.audioLevel)
                 if Recorder.recording == false {
                     Button(action: {
                         if Recorder.isReady {

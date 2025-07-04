@@ -77,6 +77,26 @@ struct RecordingRow: View {
         }
     }
 }
+struct AudioLevelMeter: View {
+    var level: Float  // from Recorder.audioLevel
+
+    var body: some View {
+        let normalized = max(0, min(1, (level + 80) / 80)) // Normalize -80...0dB → 0...1
+        let barHeight = CGFloat(normalized) * 100
+
+        return VStack(spacing: 4) {
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color.green)
+                .frame(width: 12, height: barHeight)
+                .animation(.easeOut(duration: 0.1), value: barHeight)
+
+            Text(String(format: "%.0f dB", level))
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .frame(height: 120)
+    }
+}
 //#Preview {
 //    RecordingList()
 //}
