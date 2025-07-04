@@ -11,11 +11,11 @@ import SwiftData
 @Observable
 class SpeechRecognizer {
     var recognizedText: String = "No speech recognized"
-
+    
     init() {
         requestAuthorization()
     }
-
+    
     private func requestAuthorization() {
         SFSpeechRecognizer.requestAuthorization { authStatus in
             DispatchQueue.main.async {
@@ -31,25 +31,48 @@ class SpeechRecognizer {
         }
     }
     func transcribeAudioFile(at url: URL, for segment: TranscriptionSegment, in context: ModelContext) {
+        let maxAttempts = 5
+        let delay = pow(2.0, Double(segment.attemptCount)) // 1st retry: 2s, 2nd: 4s, etc.
+        
+        guard segment.attemptCount < maxAttempts else {
+            segment.status = .failed
+            print("❌ Max transcription retries reached for segment at: \(url.lastPathComponent)")
+            try? context.save()
+            return
+        }
+        
+        // Schedule retry with exponential delay
+        DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
+            self._transcribe(url: url, segment: segment, context: context)
+        }
+    }
+    private func _transcribe(url: URL, segment: TranscriptionSegment, context: ModelContext) {
         let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
         let request = SFSpeechURLRecognitionRequest(url: url)
-
-        segment.status = .transcribing
-        try? context.save()
-
+        
+        DispatchQueue.main.async {
+            segment.status = .transcribing
+            try? context.save()
+        }
+        
         recognizer?.recognitionTask(with: request) { result, error in
             DispatchQueue.main.async {
                 if let result = result {
                     segment.transcriptionText = result.bestTranscription.formattedString
                     segment.status = .completed
                     print("📝 Transcribed: \(segment.transcriptionText ?? "")")
-                } else if let error = error {
-                    segment.status = .failed
-                    print("⚠️ Transcription failed: \(error.localizedDescription)")
+                } else {
+                    segment.attemptCount += 1
+                    segment.status = .pending
+                    print("⚠️ Transcription failed. Retrying attempt \(segment.attemptCount)...")
+                    
+                    // Trigger another retry
+                    self.transcribeAudioFile(at: url, for: segment, in: context)
                 }
-
+                
                 try? context.save()
             }
         }
     }
 }
+
