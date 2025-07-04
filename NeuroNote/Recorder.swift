@@ -9,6 +9,10 @@ import AVFoundation
 import SwiftData
 import Speech
 
+enum RecorderError: Error {
+    case insufficientDiskSpace
+    case microphonePermissionDenied
+}
 @Observable
 class Recorder {
     enum RecordingState {
@@ -56,6 +60,14 @@ class Recorder {
             }
         }
     }
+    private func isDiskSpaceAvailable(minimumFreeMB: Int = 10) -> Bool {
+        let fileURL = FileManager.default.temporaryDirectory
+        if let values = try? fileURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]),
+           let available = values.volumeAvailableCapacityForImportantUsage {
+            return available > Int64(minimumFreeMB * 1024 * 1024)
+        }
+        return false
+    }
     fileprivate func setupSession() {
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetooth])
@@ -88,62 +100,63 @@ class Recorder {
     func startRecording() throws {
         guard !recording else { return }
 
-        try AVAudioSession.sharedInstance().setActive(true, options: [.notifyOthersOnDeactivation])
+          guard isDiskSpaceAvailable() else {
+              print("❌ Not enough disk space to start recording.")
+              throw RecorderError.insufficientDiskSpace
+          }
 
-        let inputNode = engine.inputNode
-        let inputHWFormat = inputNode.inputFormat(forBus: 0) // ✅ Matches mic format
+        do {
+            try AVAudioSession.sharedInstance().setActive(true, options: [.notifyOthersOnDeactivation])
 
-        // ✅ Configurable file format (can differ from tap)
-        let outputFormat = AVAudioFormat(
-            commonFormat: bitDepth,
-            sampleRate: sampleRate,
-            channels: numChannels,
-            interleaved: false
-        )!
+            let inputNode = engine.inputNode
+            let inputHWFormat = inputNode.inputFormat(forBus: 0)
 
-        currentSegmentURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".caf")
-        print("💾 Saved to: \(currentSegmentURL.absoluteString)")
-        recordingFile = try AVAudioFile(forWriting: currentSegmentURL, settings: outputFormat.settings)
+            let outputFormat = AVAudioFormat(
+                commonFormat: bitDepth,
+                sampleRate: sampleRate,
+                channels: numChannels,
+                interleaved: false
+            )!
 
-        inputNode.removeTap(onBus: 0)
+            currentSegmentURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".caf")
 
-        // ✅ Use input hardware format for tap
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: inputHWFormat) { [weak self] buffer, _ in
-            guard let self = self else { return }
-            if let channelData = buffer.floatChannelData?[0] {
-                let frameLength = Int(buffer.frameLength)
-                
-                let bufferPointer = UnsafeBufferPointer(start: channelData, count: frameLength)
-                let squaredSamples = bufferPointer.map { $0 * $0 }
-                let meanSquare = squaredSamples.reduce(0, +) / Float(frameLength)
-                let rms = sqrt(meanSquare)
-                
-                let avgPower = 20 * log10(rms)
+            recordingFile = try AVAudioFile(forWriting: currentSegmentURL, settings: outputFormat.settings)
 
-                DispatchQueue.main.async {
-                    self.audioLevel = avgPower.isFinite ? avgPower : -120.0
+            inputNode.removeTap(onBus: 0)
+            inputNode.installTap(onBus: 0, bufferSize: 1024, format: inputHWFormat) { [weak self] buffer, _ in
+                guard let self = self else { return }
+                do {
+                    if buffer.format != self.recordingFile?.processingFormat {
+                        let converter = AVAudioConverter(from: buffer.format, to: self.recordingFile!.processingFormat)!
+                        let pcmBuffer = AVAudioPCMBuffer(pcmFormat: self.recordingFile!.processingFormat, frameCapacity: buffer.frameCapacity)!
+                        var error: NSError? = nil
+                        let inputBlock: AVAudioConverterInputBlock = { _, outStatus in
+                            outStatus.pointee = .haveData
+                            return buffer
+                        }
+                        converter.convert(to: pcmBuffer, error: &error, withInputFrom: inputBlock)
+                        try self.recordingFile?.write(from: pcmBuffer)
+                    } else {
+                        try self.recordingFile?.write(from: buffer)
+                    }
+                } catch {
+                    DispatchQueue.main.async {
+                        print("⚠️ Failed to write buffer: \(error.localizedDescription)")
+                        self.stopRecording()
+                        // Optionally notify UI here
+                    }
                 }
-            }          // 🔄 If format mismatch, convert buffer to outputFormat before writing
-            if buffer.format != self.recordingFile?.processingFormat {
-                let converter = AVAudioConverter(from: buffer.format, to: self.recordingFile!.processingFormat)!
-                let pcmBuffer = AVAudioPCMBuffer(pcmFormat: self.recordingFile!.processingFormat, frameCapacity: buffer.frameCapacity)!
-                var error: NSError? = nil
-                let inputBlock: AVAudioConverterInputBlock = { _, outStatus in
-                    outStatus.pointee = .haveData
-                    return buffer
-                }
-                converter.convert(to: pcmBuffer, error: &error, withInputFrom: inputBlock)
-                try? self.recordingFile?.write(from: pcmBuffer)
-            } else {
-                try? self.recordingFile?.write(from: buffer)
             }
+
+            try engine.start()
+            state = .recording
+            recording = true
+            scheduleNextSegment()
+
+        } catch {
+            print("❌ Failed to start recording: \(error.localizedDescription)")
+            throw error // or notify UI via delegate/binding
         }
-
-        try engine.start()
-
-        state = .recording
-        recording = true
-        scheduleNextSegment()
     }
     private func scheduleNextSegment() {
         segmentTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
