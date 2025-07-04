@@ -117,10 +117,15 @@ class Recorder {
     private func saveCurrentSegment() throws {
         guard let file = recordingFile else { return }
         let savedURL = file.url
+        let now = Date()
 
         if let context = modelContext {
-            let newRecording = Recording(fileURL: savedURL, createdAt: Date())
-            context.insert(newRecording)
+            let recording = Recording(fileURL: savedURL, createdAt: now)
+            context.insert(recording)
+
+            let segment = TranscriptionSegment(audioURL: savedURL, createdAt: now, status: .pending, attemptCount: 0, parent: recording)
+            context.insert(segment)
+
             try? context.save()
         }
         print("✅ Final segment saved to: \(savedURL.absoluteString)")

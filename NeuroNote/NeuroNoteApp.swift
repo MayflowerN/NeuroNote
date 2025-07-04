@@ -17,6 +17,6 @@ struct NeuroNoteApp: App {
         WindowGroup {
             RecordingView(Recorder: recorder)
         }
-        .modelContainer(for: Recording.self)
+        .modelContainer(for: [Recording.self, TranscriptionSegment.self])
     }
 }

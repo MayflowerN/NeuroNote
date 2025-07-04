@@ -12,7 +12,8 @@ import SwiftData
 class Recording {
     var fileURL: URL
     var createdAt: Date
-    
+    @Relationship(deleteRule: .cascade) var segments: [TranscriptionSegment] = []
+
     init(fileURL: URL, createdAt: Date) {
         self.fileURL = fileURL
         self.createdAt = createdAt
