@@ -7,6 +7,7 @@
 
 import AVFoundation
 import SwiftData
+import Speech
 
 @Observable
 class Recorder {
@@ -19,6 +20,8 @@ class Recorder {
     private var recordingStartTime: Date?
     private var fileSegmentIndex: Int = 0
     private var inputFormat: AVAudioFormat!
+    
+    var speechRecognizer: SpeechRecognizer?
     
     private var engine: AVAudioEngine!
     private var state: RecordingState = .stopped
@@ -33,9 +36,9 @@ class Recorder {
     
     var modelContext: ModelContext?
 
-    init(modelContext: ModelContext? = nil) {
+    init(modelContext: ModelContext? = nil, speechRecognizer: SpeechRecognizer? = nil) {
         self.modelContext = modelContext
-
+        self.speechRecognizer = speechRecognizer
         AVAudioSession.sharedInstance().requestRecordPermission { granted in
             DispatchQueue.main.async {
                 if granted {
@@ -81,6 +84,7 @@ class Recorder {
         let format = inputNode.inputFormat(forBus: 0)
 
         currentSegmentURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".caf")
+        print("Saved to: \(currentSegmentURL.absoluteString)")
         recordingFile = try AVAudioFile(forWriting: currentSegmentURL, settings: format.settings)
 
         // REMOVE existing tap if needed
@@ -88,9 +92,9 @@ class Recorder {
 
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
             guard let self = self else { return }
+            print("Writing buffer with \(buffer.frameLength) frames") // <--- ADD THIS
             try? self.recordingFile?.write(from: buffer)
         }
-
         try engine.start()
 
         state = .recording
@@ -119,7 +123,8 @@ class Recorder {
             context.insert(newRecording)
             try? context.save()
         }
-
+        print("✅ Final segment saved to: \(savedURL.absoluteString)")
+        speechRecognizer?.transcribeAudioFile(at: savedURL)
         recordingFile = nil
     }
     func resumeRecording() throws {

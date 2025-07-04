@@ -6,5 +6,12 @@
 	<array>
 		<string>audio</string>
 	</array>
+	<key></key>
+	<string></string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>We need speech recognition access to transcribe your voice.
+</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We need microphone access to record audio.</string>
 </dict>
 </plist>

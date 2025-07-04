@@ -22,7 +22,6 @@ struct RecordingView: View {
                         if Recorder.isReady {
                             do {
                                 try self.Recorder.startRecording()
-                                self.Recorder.recording = true
                             } catch {
                                 print("Failed to start recording: \(error.localizedDescription)")
                             }
@@ -39,7 +38,11 @@ struct RecordingView: View {
                             .padding(.bottom, 40)
                     }
                 } else {
-                    Button(action: {self.Recorder.stopRecording()}) {
+                    Button(action: {
+                        self.Recorder.stopRecording()
+                        print("All saved recordings:")
+                        recordings.forEach { print($0.fileURL.absoluteString) }
+                    }) {
                         Image(systemName: "stop.fill")
                             .resizable()
                             .aspectRatio(contentMode: .fill)

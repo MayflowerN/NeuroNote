@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		9A3D29F02E17523E0075B826 /* SpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A3D29EF2E17523E0075B826 /* SpeechRecognizer.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		9A612F672E14CEFF00CD13E3 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -17,6 +21,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		9A3D29EF2E17523E0075B826 /* SpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
 		9A612F4F2E14CEFD00CD13E3 /* NeuroNote.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NeuroNote.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A612F662E14CEFF00CD13E3 /* NeuroNoteUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NeuroNoteUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -73,6 +78,7 @@
 		9A612F462E14CEFD00CD13E3 = {
 			isa = PBXGroup;
 			children = (
+				9A3D29EF2E17523E0075B826 /* SpeechRecognizer.swift */,
 				9A612F512E14CEFD00CD13E3 /* NeuroNote */,
 				9A612F5F2E14CEFF00CD13E3 /* NeuroNoteTests */,
 				9A612F692E14CEFF00CD13E3 /* NeuroNoteUITests */,
@@ -198,6 +204,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9A3D29F02E17523E0075B826 /* SpeechRecognizer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
