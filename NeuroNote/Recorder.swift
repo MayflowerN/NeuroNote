@@ -63,10 +63,16 @@ class Recorder {
     }
     fileprivate func setupEngine() {
         engine = AVAudioEngine()
-        let input = engine.inputNode
-        let format = input.inputFormat(forBus: 0)
 
-        engine.connect(input, to: engine.mainMixerNode, format: format)
+        let inputNode = engine.inputNode
+        let silentMixer = AVAudioMixerNode()
+        silentMixer.volume = 0.0 // ✅ prevent speaker feedback
+
+        engine.attach(silentMixer)
+
+        let format = inputNode.inputFormat(forBus: 0)
+        engine.connect(inputNode, to: silentMixer, format: format)
+
         engine.prepare()
     }
     fileprivate func makeConnections() {
@@ -84,20 +90,42 @@ class Recorder {
         try AVAudioSession.sharedInstance().setActive(true, options: [.notifyOthersOnDeactivation])
 
         let inputNode = engine.inputNode
-        let format = inputNode.inputFormat(forBus: 0)
+        let inputHWFormat = inputNode.inputFormat(forBus: 0) // ✅ Matches mic format
+
+        // ✅ Configurable file format (can differ from tap)
+        let outputFormat = AVAudioFormat(
+            commonFormat: bitDepth,
+            sampleRate: sampleRate,
+            channels: numChannels,
+            interleaved: false
+        )!
 
         currentSegmentURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".caf")
-        print("Saved to: \(currentSegmentURL.absoluteString)")
-        recordingFile = try AVAudioFile(forWriting: currentSegmentURL, settings: format.settings)
+        print("💾 Saved to: \(currentSegmentURL.absoluteString)")
+        recordingFile = try AVAudioFile(forWriting: currentSegmentURL, settings: outputFormat.settings)
 
-        // REMOVE existing tap if needed
         inputNode.removeTap(onBus: 0)
 
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
+        // ✅ Use input hardware format for tap
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: inputHWFormat) { [weak self] buffer, _ in
             guard let self = self else { return }
-            print("Writing buffer with \(buffer.frameLength) frames") // <--- ADD THIS
-            try? self.recordingFile?.write(from: buffer)
+
+            // 🔄 If format mismatch, convert buffer to outputFormat before writing
+            if buffer.format != self.recordingFile?.processingFormat {
+                let converter = AVAudioConverter(from: buffer.format, to: self.recordingFile!.processingFormat)!
+                let pcmBuffer = AVAudioPCMBuffer(pcmFormat: self.recordingFile!.processingFormat, frameCapacity: buffer.frameCapacity)!
+                var error: NSError? = nil
+                let inputBlock: AVAudioConverterInputBlock = { _, outStatus in
+                    outStatus.pointee = .haveData
+                    return buffer
+                }
+                converter.convert(to: pcmBuffer, error: &error, withInputFrom: inputBlock)
+                try? self.recordingFile?.write(from: pcmBuffer)
+            } else {
+                try? self.recordingFile?.write(from: buffer)
+            }
         }
+
         try engine.start()
 
         state = .recording
