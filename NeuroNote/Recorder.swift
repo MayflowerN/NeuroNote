@@ -18,6 +18,7 @@ class Recorder {
     enum RecordingState {
         case recording, paused, stopped
     }
+    var microphonePermissionGranted: Bool? = nil
     var audioLevel: Float = -120.0
     private var currentSegmentURL: URL!
     private var recordingFile: AVAudioFile?
@@ -47,8 +48,10 @@ class Recorder {
     init(modelContext: ModelContext? = nil, speechRecognizer: SpeechRecognizer? = nil) {
         self.modelContext = modelContext
         self.speechRecognizer = speechRecognizer
+        
         AVAudioSession.sharedInstance().requestRecordPermission { granted in
             DispatchQueue.main.async {
+                self.microphonePermissionGranted = granted
                 if granted {
                     self.setupSession()
                     self.setupEngine()

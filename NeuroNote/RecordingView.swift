@@ -16,42 +16,69 @@ struct RecordingView: View {
     var body: some View {
         NavigationStack {
             VStack {
-                RecordingList()
-                AudioLevelMeter(level: Recorder.audioLevel)
-                if Recorder.recording == false {
-                    Button(action: {
-                        if Recorder.isReady {
-                            do {
-                                try self.Recorder.startRecording()
-                            } catch {
-                                print("Failed to start recording: \(error.localizedDescription)")
+               
+                if let permission = Recorder.microphonePermissionGranted {
+                    if permission {
+                        RecordingList()
+                        AudioLevelMeter(level: Recorder.audioLevel)
+                        if Recorder.recording == false {
+                            Button(action: {
+                                if Recorder.isReady {
+                                    do {
+                                        try Recorder.startRecording()
+                                    } catch {
+                                        print("Failed to start recording: \(error.localizedDescription)")
+                                    }
+                                }
+                            }) {
+                                Image(systemName: "circle.fill")
+                                    .resizable()
+                                    .frame(width: 100, height: 100)
+                                    .foregroundColor(.red)
+                                    .padding(.bottom, 40)
                             }
                         } else {
-                            print("❌ Recorder not ready yet. Microphone permission may still be pending.")
+                            Button(action: {
+                                Recorder.stopRecording()
+                                print("All saved recordings:")
+                                recordings.forEach { print($0.fileURL.absoluteString) }
+                            }) {
+                                Image(systemName: "stop.fill")
+                                    .resizable()
+                                    .frame(width: 100, height: 100)
+                                    .foregroundColor(.red)
+                                    .padding(.bottom, 40)
+                            }
                         }
-                    }) {
-                        Image(systemName: "circle.fill")
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 100, height: 100)
-                            .clipped()
-                            .foregroundColor(.red)
-                            .padding(.bottom, 40)
+                    } else {
+                        // 🟡 Fallback UI if permission denied
+                        VStack(spacing: 16) {
+                            Image(systemName: "mic.slash")
+                                .resizable()
+                                .frame(width: 60, height: 80)
+                                .foregroundColor(.gray)
+                            
+                            Text("Microphone access is required to record.")
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                            
+                            Button("Open Settings") {
+                                if let url = URL(string: UIApplication.openSettingsURLString),
+                                   UIApplication.shared.canOpenURL(url) {
+                                    UIApplication.shared.open(url)
+                                }
+                            }
+                            .padding()
+                            .background(Color.red.opacity(0.8))
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                        }
+                        .padding()
                     }
                 } else {
-                    Button(action: {
-                        self.Recorder.stopRecording()
-                        print("All saved recordings:")
-                        recordings.forEach { print($0.fileURL.absoluteString) }
-                    }) {
-                        Image(systemName: "stop.fill")
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 100, height: 100)
-                            .clipped()
-                            .foregroundColor(.red)
-                            .padding(.bottom, 40)
-                    }
+                    // Optional: show loading state while permission is undetermined
+                    ProgressView("Checking microphone access...")
+                        .padding()
                 }
             }
             .navigationTitle("Voice recorder")
