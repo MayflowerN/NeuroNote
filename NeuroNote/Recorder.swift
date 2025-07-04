@@ -36,6 +36,9 @@ class Recorder {
     
     var modelContext: ModelContext?
 
+    var sampleRate: Double = 44100.0
+    var bitDepth: AVAudioCommonFormat = .pcmFormatInt16
+    var numChannels: AVAudioChannelCount = 1
     init(modelContext: ModelContext? = nil, speechRecognizer: SpeechRecognizer? = nil) {
         self.modelContext = modelContext
         self.speechRecognizer = speechRecognizer
@@ -127,9 +130,12 @@ class Recorder {
             context.insert(segment)
 
             try? context.save()
+
+            // ✅ Move this *inside* so `segment` and `context` are in scope
+            speechRecognizer?.transcribeAudioFile(at: savedURL, for: segment, in: context)
         }
+
         print("✅ Final segment saved to: \(savedURL.absoluteString)")
-        speechRecognizer?.transcribeAudioFile(at: savedURL)
         recordingFile = nil
     }
     func resumeRecording() throws {
@@ -173,14 +179,14 @@ class Recorder {
                 }
             case .ended:
                 weakself.isInterrupted = false
-                
-                // Activate session again
-                try? AVAudioSession.sharedInstance().setActive(true, options: .notifyOthersOnDeactivation)
-                
-                weakself.handleConfigurationChange()
-                
-                if weakself.state == .paused {
-                    try? weakself.resumeRecording()
+
+                // Check if the system recommends resuming audio
+                if let optionsValue = userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt {
+                    let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+                    if options.contains(.shouldResume), weakself.state == .paused {
+                        try? AVAudioSession.sharedInstance().setActive(true, options: .notifyOthersOnDeactivation)
+                        try? weakself.resumeRecording()
+                    }
                 }
             @unknown default:
                 break

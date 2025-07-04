@@ -7,7 +7,7 @@
 
 import Foundation
 import Speech
-
+import SwiftData
 @Observable
 class SpeechRecognizer {
     var recognizedText: String = "No speech recognized"
@@ -30,17 +30,25 @@ class SpeechRecognizer {
             }
         }
     }
-
-    func transcribeAudioFile(at url: URL) {
+    func transcribeAudioFile(at url: URL, for segment: TranscriptionSegment, in context: ModelContext) {
         let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
         let request = SFSpeechURLRecognitionRequest(url: url)
 
+        segment.status = .transcribing
+        try? context.save()
+
         recognizer?.recognitionTask(with: request) { result, error in
-            if let result = result {
-                self.recognizedText = result.bestTranscription.formattedString
-                print("📝 Transcribed: \(self.recognizedText)")
-            } else if let error = error {
-                print("⚠️ Transcription failed: \(error.localizedDescription)")
+            DispatchQueue.main.async {
+                if let result = result {
+                    segment.transcriptionText = result.bestTranscription.formattedString
+                    segment.status = .completed
+                    print("📝 Transcribed: \(segment.transcriptionText ?? "")")
+                } else if let error = error {
+                    segment.status = .failed
+                    print("⚠️ Transcription failed: \(error.localizedDescription)")
+                }
+
+                try? context.save()
             }
         }
     }

@@ -16,7 +16,7 @@ struct RecordingView: View {
     var body: some View {
         NavigationStack {
             VStack {
-                RecordingList(Recorder: Recorder)
+                RecordingList()
                 if Recorder.recording == false {
                     Button(action: {
                         if Recorder.isReady {
