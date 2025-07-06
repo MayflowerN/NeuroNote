@@ -31,48 +31,84 @@ class SpeechRecognizer {
         }
     }
     func transcribeAudioFile(at url: URL, for segment: TranscriptionSegment, in context: ModelContext) {
-        let maxAttempts = 5
-        let delay = pow(2.0, Double(segment.attemptCount)) // 1st retry: 2s, 2nd: 4s, etc.
-        
-        guard segment.attemptCount < maxAttempts else {
-            segment.status = .failed
-            print("❌ Max transcription retries reached for segment at: \(url.lastPathComponent)")
-            try? context.save()
-            return
-        }
-        
-        // Schedule retry with exponential delay
-        DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
-            self._transcribe(url: url, segment: segment, context: context)
-        }
-    }
-    private func _transcribe(url: URL, segment: TranscriptionSegment, context: ModelContext) {
-        let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
-        let request = SFSpeechURLRecognitionRequest(url: url)
-        
-        DispatchQueue.main.async {
-            segment.status = .transcribing
-            try? context.save()
-        }
-        
-        recognizer?.recognitionTask(with: request) { result, error in
-            DispatchQueue.main.async {
-                if let result = result {
-                    segment.transcriptionText = result.bestTranscription.formattedString
-                    segment.status = .completed
-                    print("📝 Transcribed: \(segment.transcriptionText ?? "")")
+        print("🎙️ Starting transcription for: \(url.lastPathComponent)")
+        Task {
+            do {
+                if false {
+                    try await transcribeWithWhisper(url: url, segment: segment, context: context)
                 } else {
-                    segment.attemptCount += 1
-                    segment.status = .pending
-                    print("⚠️ Transcription failed. Retrying attempt \(segment.attemptCount)...")
-                    
-                    // Trigger another retry
-                    self.transcribeAudioFile(at: url, for: segment, in: context)
+                    try await transcribeWithApple(url: url, segment: segment, context: context)
                 }
-                
-                try? context.save()
+            } catch {
+                await handleTranscriptionFailure(url: url, segment: segment, context: context)
             }
         }
     }
-}
+    
+    private func transcribeWithWhisper(url: URL, segment: TranscriptionSegment, context: ModelContext) async throws {
+        segment.status = .transcribing
+        try? context.save()
+        print("📡 Sending audio to Whisper API...")
+        let text = try await WhisperService.transcribe(audioURL: url)
+        segment.transcriptionText = text
+        segment.status = .completed
+        try? context.save()
+        print("✅ Whisper transcribed: \(text)")
+    }
+    
+    private func transcribeWithApple(url: URL, segment: TranscriptionSegment, context: ModelContext) async throws {
+        try await withCheckedThrowingContinuation { continuation in
+            let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+            let request = SFSpeechURLRecognitionRequest(url: url)
+            request.shouldReportPartialResults = false // ✅ Important for finalized result
 
+            var didFinish = false
+
+            let task = recognizer?.recognitionTask(with: request) { result, error in
+                guard !didFinish else { return }
+
+                if let result = result, result.isFinal {
+                    segment.transcriptionText = result.bestTranscription.formattedString
+                    segment.status = .completed
+                    try? context.save()
+                    print("✅ Apple STT transcribed: \(segment.transcriptionText ?? "")")
+                    continuation.resume()
+                    didFinish = true
+                } else if let error = error {
+                    continuation.resume(throwing: error)
+                    didFinish = true
+                }
+            }
+
+            // ⏱️ Timeout fallback (sometimes no .isFinal is triggered for short clips)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                if !didFinish {
+                    print("⏱️ Forcing task cancel due to no final result")
+                    task?.cancel()
+                    continuation.resume(throwing: NSError(domain: "STTTimeout", code: -1))
+                    didFinish = true
+                }
+            }
+        }
+    }
+    private func handleTranscriptionFailure(url: URL, segment: TranscriptionSegment, context: ModelContext) async {
+        segment.attemptCount += 1
+        print("⚠️ Transcription failed. Retrying \(segment.attemptCount)...")
+        
+        if segment.attemptCount >= 5 {
+            if segment.useWhisper {
+                print("⚠️ Switching to Apple STT fallback")
+                segment.useWhisper = false
+            } else {
+                segment.status = .failed
+                print("❌ Max transcription retries reached")
+            }
+        } else {
+            let delay = pow(2.0, Double(segment.attemptCount))
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            transcribeAudioFile(at: url, for: segment, in: context)
+        }
+        
+        try? context.save()
+    }
+}

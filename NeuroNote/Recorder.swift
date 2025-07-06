@@ -130,7 +130,8 @@ class Recorder {
                 guard let self = self else { return }
                 do {
                     if buffer.format != self.recordingFile?.processingFormat {
-                        let converter = AVAudioConverter(from: buffer.format, to: self.recordingFile!.processingFormat)!
+                        guard let recordingFile = self.recordingFile else { return }
+                        let converter = AVAudioConverter(from: buffer.format, to: recordingFile.processingFormat)!
                         let pcmBuffer = AVAudioPCMBuffer(pcmFormat: self.recordingFile!.processingFormat, frameCapacity: buffer.frameCapacity)!
                         var error: NSError? = nil
                         let inputBlock: AVAudioConverterInputBlock = { _, outStatus in

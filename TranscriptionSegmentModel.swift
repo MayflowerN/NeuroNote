@@ -16,6 +16,7 @@ class TranscriptionSegment {
     var status: TranscriptionStatus
     var attemptCount: Int
     var parent: Recording?
+    var useWhisper: Bool = true
 
     init(audioURL: URL, transcriptionText: String? = nil, createdAt: Date = .now, status: TranscriptionStatus = .pending, attemptCount: Int = 0, parent: Recording? = nil) {
         self.audioURL = audioURL
