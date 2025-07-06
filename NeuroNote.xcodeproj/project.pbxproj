@@ -10,9 +10,17 @@
 		9A3D29F02E17523E0075B826 /* SpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A3D29EF2E17523E0075B826 /* SpeechRecognizer.swift */; };
 		9A3D29F22E1759A00075B826 /* TranscriptionSegmentModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A3D29F12E1759A00075B826 /* TranscriptionSegmentModel.swift */; };
 		9A3D29F42E17C27A0075B826 /* WhisperService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A3D29F32E17C27A0075B826 /* WhisperService.swift */; };
+		9A3D29F62E1A27070075B826 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A3D29F52E1A27070075B826 /* KeychainHelper.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		9A3D2A462E1A31340075B826 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9A612F472E14CEFD00CD13E3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9A612F4E2E14CEFD00CD13E3;
+			remoteInfo = NeuroNote;
+		};
 		9A612F672E14CEFF00CD13E3 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 9A612F472E14CEFD00CD13E3 /* Project object */;
@@ -26,6 +34,8 @@
 		9A3D29EF2E17523E0075B826 /* SpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
 		9A3D29F12E1759A00075B826 /* TranscriptionSegmentModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionSegmentModel.swift; sourceTree = "<group>"; };
 		9A3D29F32E17C27A0075B826 /* WhisperService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperService.swift; sourceTree = "<group>"; };
+		9A3D29F52E1A27070075B826 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		9A3D2A422E1A31340075B826 /* NeuroNoteTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NeuroNoteTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A612F4F2E14CEFD00CD13E3 /* NeuroNote.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NeuroNote.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A612F662E14CEFF00CD13E3 /* NeuroNoteUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NeuroNoteUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -41,17 +51,17 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		9A3D2A432E1A31340075B826 /* NeuroNoteTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = NeuroNoteTests;
+			sourceTree = "<group>";
+		};
 		9A612F512E14CEFD00CD13E3 /* NeuroNote */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				9A612F7C2E14E03100CD13E3 /* Exceptions for "NeuroNote" folder in "NeuroNote" target */,
 			);
 			path = NeuroNote;
-			sourceTree = "<group>";
-		};
-		9A612F5F2E14CEFF00CD13E3 /* NeuroNoteTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = NeuroNoteTests;
 			sourceTree = "<group>";
 		};
 		9A612F692E14CEFF00CD13E3 /* NeuroNoteUITests */ = {
@@ -62,6 +72,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		9A3D2A3F2E1A31340075B826 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		9A612F4C2E14CEFD00CD13E3 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -82,12 +99,13 @@
 		9A612F462E14CEFD00CD13E3 = {
 			isa = PBXGroup;
 			children = (
+				9A3D29F52E1A27070075B826 /* KeychainHelper.swift */,
 				9A3D29F32E17C27A0075B826 /* WhisperService.swift */,
 				9A3D29F12E1759A00075B826 /* TranscriptionSegmentModel.swift */,
 				9A3D29EF2E17523E0075B826 /* SpeechRecognizer.swift */,
 				9A612F512E14CEFD00CD13E3 /* NeuroNote */,
-				9A612F5F2E14CEFF00CD13E3 /* NeuroNoteTests */,
 				9A612F692E14CEFF00CD13E3 /* NeuroNoteUITests */,
+				9A3D2A432E1A31340075B826 /* NeuroNoteTests */,
 				9A612F502E14CEFD00CD13E3 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -97,6 +115,7 @@
 			children = (
 				9A612F4F2E14CEFD00CD13E3 /* NeuroNote.app */,
 				9A612F662E14CEFF00CD13E3 /* NeuroNoteUITests.xctest */,
+				9A3D2A422E1A31340075B826 /* NeuroNoteTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -104,6 +123,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		9A3D2A412E1A31340075B826 /* NeuroNoteTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9A3D2A482E1A31340075B826 /* Build configuration list for PBXNativeTarget "NeuroNoteTests" */;
+			buildPhases = (
+				9A3D2A3E2E1A31340075B826 /* Sources */,
+				9A3D2A3F2E1A31340075B826 /* Frameworks */,
+				9A3D2A402E1A31340075B826 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9A3D2A472E1A31340075B826 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				9A3D2A432E1A31340075B826 /* NeuroNoteTests */,
+			);
+			name = NeuroNoteTests;
+			packageProductDependencies = (
+			);
+			productName = NeuroNoteTests;
+			productReference = 9A3D2A422E1A31340075B826 /* NeuroNoteTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		9A612F4E2E14CEFD00CD13E3 /* NeuroNote */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 9A612F702E14CEFF00CD13E3 /* Build configuration list for PBXNativeTarget "NeuroNote" */;
@@ -159,6 +201,10 @@
 				LastSwiftUpdateCheck = 1640;
 				LastUpgradeCheck = 1640;
 				TargetAttributes = {
+					9A3D2A412E1A31340075B826 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = 9A612F4E2E14CEFD00CD13E3;
+					};
 					9A612F4E2E14CEFD00CD13E3 = {
 						CreatedOnToolsVersion = 16.4;
 					};
@@ -184,11 +230,19 @@
 			targets = (
 				9A612F4E2E14CEFD00CD13E3 /* NeuroNote */,
 				9A612F652E14CEFF00CD13E3 /* NeuroNoteUITests */,
+				9A3D2A412E1A31340075B826 /* NeuroNoteTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		9A3D2A402E1A31340075B826 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		9A612F4D2E14CEFD00CD13E3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -206,12 +260,20 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		9A3D2A3E2E1A31340075B826 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		9A612F4B2E14CEFD00CD13E3 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				9A3D29F42E17C27A0075B826 /* WhisperService.swift in Sources */,
 				9A3D29F02E17523E0075B826 /* SpeechRecognizer.swift in Sources */,
+				9A3D29F62E1A27070075B826 /* KeychainHelper.swift in Sources */,
 				9A3D29F22E1759A00075B826 /* TranscriptionSegmentModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -226,6 +288,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		9A3D2A472E1A31340075B826 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9A612F4E2E14CEFD00CD13E3 /* NeuroNote */;
+			targetProxy = 9A3D2A462E1A31340075B826 /* PBXContainerItemProxy */;
+		};
 		9A612F682E14CEFF00CD13E3 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 9A612F4E2E14CEFD00CD13E3 /* NeuroNote */;
@@ -234,6 +301,42 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		9A3D2A492E1A31340075B826 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9FKHFCQNJL;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.codewithellie.NeuroNoteTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NeuroNote.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NeuroNote";
+			};
+			name = Debug;
+		};
+		9A3D2A4A2E1A31340075B826 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9FKHFCQNJL;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.codewithellie.NeuroNoteTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NeuroNote.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NeuroNote";
+			};
+			name = Release;
+		};
 		9A612F6E2E14CEFF00CD13E3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -453,6 +556,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		9A3D2A482E1A31340075B826 /* Build configuration list for PBXNativeTarget "NeuroNoteTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9A3D2A492E1A31340075B826 /* Debug */,
+				9A3D2A4A2E1A31340075B826 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		9A612F4A2E14CEFD00CD13E3 /* Build configuration list for PBXProject "NeuroNote" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

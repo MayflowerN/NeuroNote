@@ -4,28 +4,28 @@
 //
 //  Created by Ellie on 7/2/25.
 //
-
 import SwiftUI
 import SwiftData
 
 struct RecordingView: View {
-    @State var Recorder: Recorder
+    @State var recorder: Recorder
     @Query var recordings: [Recording]
-    
+
     @Environment(\.modelContext) var modelContext
+
     var body: some View {
         NavigationStack {
             VStack {
-               
-                if let permission = Recorder.microphonePermissionGranted {
+                if let permission = recorder.microphonePermissionGranted {
                     if permission {
                         RecordingList()
-                        AudioLevelMeter(level: Recorder.audioLevel)
-                        if Recorder.recording == false {
+                        AudioLevelMeter(level: recorder.audioLevel)
+
+                        if recorder.recording == false {
                             Button(action: {
-                                if Recorder.isReady {
+                                if recorder.isReady {
                                     do {
-                                        try Recorder.startRecording()
+                                        try recorder.startRecording()
                                     } catch {
                                         print("Failed to start recording: \(error.localizedDescription)")
                                     }
@@ -39,7 +39,7 @@ struct RecordingView: View {
                             }
                         } else {
                             Button(action: {
-                                Recorder.stopRecording()
+                                recorder.stopRecording()
                                 print("All saved recordings:")
                                 recordings.forEach { print($0.fileURL.absoluteString) }
                             }) {
@@ -51,17 +51,17 @@ struct RecordingView: View {
                             }
                         }
                     } else {
-                        // 🟡 Fallback UI if permission denied
+                        // Fallback UI if permission denied
                         VStack(spacing: 16) {
                             Image(systemName: "mic.slash")
                                 .resizable()
                                 .frame(width: 60, height: 80)
                                 .foregroundColor(.gray)
-                            
+
                             Text("Microphone access is required to record.")
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal)
-                            
+
                             Button("Open Settings") {
                                 if let url = URL(string: UIApplication.openSettingsURLString),
                                    UIApplication.shared.canOpenURL(url) {
@@ -76,24 +76,18 @@ struct RecordingView: View {
                         .padding()
                     }
                 } else {
-                    // Optional: show loading state while permission is undetermined
+                    // show loading state while permission is undetermined
                     ProgressView("Checking microphone access...")
                         .padding()
                 }
             }
-            .navigationTitle("Voice recorder")
+            .navigationTitle("Voice Recorder")
             .onAppear {
-                if Recorder.modelContext == nil {
-                    Recorder.modelContext = modelContext
+                if recorder.modelContext == nil {
+                    recorder.modelContext = modelContext
                 }
-                Recorder.setup()  
-                
+                recorder.setup()
             }
         }
-        
     }
-    
 }
-//#Preview {
-//    RecordingView()
-//}

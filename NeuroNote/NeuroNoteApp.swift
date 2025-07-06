@@ -15,7 +15,7 @@ struct NeuroNoteApp: App {
         let recorder = Recorder(speechRecognizer: speechRecognizer)
 
         WindowGroup {
-            RecordingView(Recorder: recorder)
+            RecordingView(recorder: recorder)
         }
         .modelContainer(for: [Recording.self, TranscriptionSegment.self])
     }

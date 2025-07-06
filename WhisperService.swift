@@ -10,7 +10,13 @@ import SwiftData
 
 struct WhisperService {
     static let endpoint = URL(string: "https://api.openai.com/v1/audio/transcriptions")!
-    static let apiKey = "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" // 🔐 Use Keychain in production
+
+    static var apiKey: String {
+        guard let key = KeychainHelper.load(key: "whisperAPIKey") else {
+            fatalError("API Key not found in Keychain")
+        }
+        return key
+    }
 
     static func transcribe(audioURL: URL) async throws -> String {
         var request = URLRequest(url: endpoint)
@@ -26,15 +32,16 @@ struct WhisperService {
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw NSError(domain: "Whisper", code: 2, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])
+            throw NSError(domain: "Whisper", code: 2, userInfo: [NSLocalizedDescriptionKey: "Invalid HTTP response"])
         }
 
-        if httpResponse.statusCode != 200 {
-            let responseText = String(data: data, encoding: .utf8) ?? "N/A"
-            print("❌ Whisper failed with status: \(httpResponse.statusCode)")
-            print("🔍 Whisper response: \(responseText)")
-            throw NSError(domain: "Whisper", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Whisper failed"])
+        guard httpResponse.statusCode == 200 else {
+            let responseText = String(data: data, encoding: .utf8) ?? "No response text"
+            print("Whisper failed with status: \(httpResponse.statusCode)")
+            print("Whisper response: \(responseText)")
+            throw NSError(domain: "Whisper", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Whisper API failed"])
         }
+
         let decoded = try JSONDecoder().decode(WhisperResponse.self, from: data)
         return decoded.text
     }
@@ -52,12 +59,10 @@ struct WhisperService {
         body.append("Content-Type: audio/x-caf\r\n\r\n".data(using: .utf8)!)
         body.append(try Data(contentsOf: audioURL))
         body.append("\r\n".data(using: .utf8)!)
-
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)
         return body
     }
 }
-
 struct WhisperResponse: Codable {
     let text: String
 }

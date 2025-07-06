@@ -15,15 +15,24 @@ class TranscriptionSegment {
     var createdAt: Date
     var status: TranscriptionStatus
     var attemptCount: Int
+    var useWhisper: Bool
     var parent: Recording?
-    var useWhisper: Bool = true
 
-    init(audioURL: URL, transcriptionText: String? = nil, createdAt: Date = .now, status: TranscriptionStatus = .pending, attemptCount: Int = 0, parent: Recording? = nil) {
+    init(
+        audioURL: URL,
+        transcriptionText: String? = nil,
+        createdAt: Date = .now,
+        status: TranscriptionStatus = .pending,
+        attemptCount: Int = 0,
+        useWhisper: Bool = true,
+        parent: Recording? = nil
+    ) {
         self.audioURL = audioURL
         self.transcriptionText = transcriptionText
         self.createdAt = createdAt
         self.status = status
         self.attemptCount = attemptCount
+        self.useWhisper = useWhisper
         self.parent = parent
     }
 }

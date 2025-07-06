@@ -2,11 +2,10 @@
 //  NeuroNoteTests.swift
 //  NeuroNoteTests
 //
-//  Created by Ellie on 7/1/25.
+//  Created by Ellie on 7/5/25.
 //
 
 import Testing
-@testable import NeuroNote
 
 struct NeuroNoteTests {
 

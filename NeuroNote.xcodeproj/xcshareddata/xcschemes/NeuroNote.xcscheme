@@ -35,7 +35,7 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "9A612F5B2E14CEFF00CD13E3"
+               BlueprintIdentifier = "9A3D2A412E1A31340075B826"
                BuildableName = "NeuroNoteTests.xctest"
                BlueprintName = "NeuroNoteTests"
                ReferencedContainer = "container:NeuroNote.xcodeproj">

@@ -7,40 +7,54 @@
 
 import SwiftUI
 import SwiftData
+
 struct RecordingList: View {
     @Query(sort: \Recording.createdAt, order: .reverse) var recordings: [Recording]
     @Environment(\.modelContext) var context
+
     var body: some View {
         List {
-             ForEach(recordings) { recording in
-                 NavigationLink {
-                     SegmentListView(recording: recording)
-                 } label: {
-                     VStack(alignment: .leading) {
-                         Text("Recording: \(recording.createdAt.formatted(date: .abbreviated, time: .shortened))")
-                         Text("\(recording.segments.count) segments")
-                             .font(.subheadline)
-                             .foregroundColor(.secondary)
-                     }
-                 }
-             }
-             .onDelete(perform: deleteRecording)
-         }
-     }
+            ForEach(recordings) { recording in
+                NavigationLink {
+                    SegmentListView(recording: recording)
+                } label: {
+                    VStack(alignment: .leading) {
+                        Text("Recording: \(recording.createdAt.formatted(date: .abbreviated, time: .shortened))")
+                        Text("\(recording.segments.count) segments")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            .onDelete(perform: deleteRecording)
+        }
+    }
+
     private func deleteRecording(at offsets: IndexSet) {
         for index in offsets {
             let recording = recordings[index]
 
-            // Optionally delete audio file from disk
-            try? FileManager.default.removeItem(at: recording.fileURL)
+            // Delete file if it exists
+            if FileManager.default.fileExists(atPath: recording.fileURL.path) {
+                do {
+                    try FileManager.default.removeItem(at: recording.fileURL)
+                    print("🗑️ Deleted file: \(recording.fileURL.lastPathComponent)")
+                } catch {
+                    print("⚠️ Failed to delete file: \(error.localizedDescription)")
+                }
+            }
 
             context.delete(recording)
         }
-        try? context.save()
+
+        do {
+            try context.save()
+        } catch {
+            print("❌ Failed to save context after deletion: \(error.localizedDescription)")
+        }
     }
 }
- 
-import SwiftUI
+
 
 struct SegmentListView: View {
     var recording: Recording
@@ -66,22 +80,23 @@ struct SegmentListView: View {
         .navigationTitle("Segments")
     }
 }
+
 struct RecordingRow: View {
-    
     var audioURL: URL
-    
+
     var body: some View {
         HStack {
-            Text("\(audioURL.lastPathComponent)")
+            Text(audioURL.lastPathComponent)
             Spacer()
         }
     }
 }
+
 struct AudioLevelMeter: View {
-    var level: Float  // from Recorder.audioLevel
+    var level: Float
 
     var body: some View {
-        let normalized = max(0, min(1, (level + 80) / 80)) // Normalize -80...0dB → 0...1
+        let normalized = max(0, min(1, (level + 80) / 80)) // Normalize -80...0 dB → 0...1
         let barHeight = CGFloat(normalized) * 100
 
         return VStack(spacing: 4) {
@@ -97,6 +112,3 @@ struct AudioLevelMeter: View {
         .frame(height: 120)
     }
 }
-//#Preview {
-//    RecordingList()
-//}
