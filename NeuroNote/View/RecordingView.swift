@@ -24,11 +24,7 @@ struct RecordingView: View {
                         RecordingList(recordings: recordings)
                             .accessibilityLabel("Recording list")
                             .accessibilityHint("Displays all saved recordings")
-
-                        AudioLevelMeter(level: recorder.audioLevel)
-                            .accessibilityLabel("Audio level meter")
-                            .accessibilityValue("\(Int(recorder.audioLevel * 100)) percent")
-
+                            .padding(.vertical)
                         // Start button
                         if recorder.recording == false {
                             Button(action: {

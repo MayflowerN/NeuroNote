@@ -22,7 +22,6 @@ class Recorder {
 
     // MARK: - Public State
     var microphonePermissionGranted: Bool? = nil
-    var audioLevel: Float = -120.0
     var isReady = false
     private(set) var recording = false
     var recordings = [Recording]()
@@ -75,9 +74,10 @@ class Recorder {
         try? session.setActive(true, options: .notifyOthersOnDeactivation)
     }
 
-    /// Prepares the AVAudioEngine with a silent mixer.
+    /// Prepares the AVAudioEngine.
     private func setupEngine() {
         engine = AVAudioEngine()
+
         let inputNode = engine.inputNode
         let silentMixer = AVAudioMixerNode()
         silentMixer.volume = 0.0
@@ -85,6 +85,7 @@ class Recorder {
         engine.attach(silentMixer)
         let format = inputNode.inputFormat(forBus: 0)
         engine.connect(inputNode, to: silentMixer, format: format)
+
         engine.prepare()
     }
 
@@ -130,8 +131,9 @@ class Recorder {
             inputNode.installTap(onBus: 0, bufferSize: 1024, format: inputHWFormat) { [weak self] buffer, _ in
                 self?.writeBuffer(buffer)
             }
-
-            try engine.start()
+            if !engine.isRunning {
+                try engine.start()
+            }
             state = .recording
             recording = true
             scheduleNextSegment()

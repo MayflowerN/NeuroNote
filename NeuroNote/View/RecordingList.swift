@@ -108,30 +108,3 @@ struct RecordingRow: View {
     }
 }
 
-// Displays a vertical green bar that reflects current audio level (in decibels)
-struct AudioLevelMeter: View {
-    var level: Float
-
-    var body: some View {
-        let normalized = max(0, min(1, (level + 80) / 80)) // Normalize -80...0 dB → 0...1
-        let barHeight = CGFloat(normalized) * 100
-
-        return VStack(spacing: 4) {
-            RoundedRectangle(cornerRadius: 4)
-                .fill(Color.green)
-                .frame(width: 12, height: barHeight)
-                .animation(.easeOut(duration: 0.1), value: barHeight)
-                .accessibilityHidden(true)
-
-            Text(String(format: "%.0f dB", level))
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .accessibilityLabel("Audio level")
-                .accessibilityValue(String(format: "%.0f decibels", level))
-        }
-        .frame(height: 120)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Audio level meter")
-        .accessibilityValue(String(format: "%.0f decibels", level))
-    }
-}
