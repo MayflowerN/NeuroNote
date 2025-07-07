@@ -8,8 +8,9 @@
 import SwiftUI
 import SwiftData
 
+// Displays a list of recordings sorted by most recent
 struct RecordingList: View {
-    @Query(sort: \Recording.createdAt, order: .reverse) var recordings: [Recording]
+    var recordings: [Recording]
     @Environment(\.modelContext) var context
 
     var body: some View {
@@ -24,17 +25,23 @@ struct RecordingList: View {
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Recording from \(recording.createdAt.formatted(date: .abbreviated, time: .shortened)), with \(recording.segments.count) segments")
+                    .accessibilityHint("Tap to view transcription segments")
                 }
             }
-            .onDelete(perform: deleteRecording)
+            .onDelete(perform: deleteRecording) // Enables swipe to delete
         }
+        .accessibilityLabel("Recordings List")
+        .accessibilityHint("Swipe to delete recordings")
     }
 
+    /// Deletes the selected recording and its associated file from disk
     private func deleteRecording(at offsets: IndexSet) {
         for index in offsets {
             let recording = recordings[index]
 
-            // Delete file if it exists
+            // Delete the file from disk if it exists
             if FileManager.default.fileExists(atPath: recording.fileURL.path) {
                 do {
                     try FileManager.default.removeItem(at: recording.fileURL)
@@ -44,9 +51,11 @@ struct RecordingList: View {
                 }
             }
 
+            // Remove recording from SwiftData
             context.delete(recording)
         }
 
+        // Save context after deletion
         do {
             try context.save()
         } catch {
@@ -55,7 +64,7 @@ struct RecordingList: View {
     }
 }
 
-
+// Displays the list of transcription segments for a selected recording
 struct SegmentListView: View {
     var recording: Recording
 
@@ -75,12 +84,17 @@ struct SegmentListView: View {
                     .font(.footnote)
                 }
                 .padding(.vertical, 4)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Segment created at \(segment.createdAt.formatted(date: .omitted, time: .shortened)). Status: \(segment.status.rawValue.capitalized). \(segment.transcriptionText ?? "Transcription pending")")
             }
         }
         .navigationTitle("Segments")
+        .accessibilityLabel("Transcription Segments")
+        .accessibilityHint("Displays list of transcribed audio segments")
     }
 }
 
+// Shows a single row of audio file (not currently used)
 struct RecordingRow: View {
     var audioURL: URL
 
@@ -89,9 +103,12 @@ struct RecordingRow: View {
             Text(audioURL.lastPathComponent)
             Spacer()
         }
+        .accessibilityElement()
+        .accessibilityLabel("Audio file \(audioURL.lastPathComponent)")
     }
 }
 
+// Displays a vertical green bar that reflects current audio level (in decibels)
 struct AudioLevelMeter: View {
     var level: Float
 
@@ -104,11 +121,17 @@ struct AudioLevelMeter: View {
                 .fill(Color.green)
                 .frame(width: 12, height: barHeight)
                 .animation(.easeOut(duration: 0.1), value: barHeight)
+                .accessibilityHidden(true)
 
             Text(String(format: "%.0f dB", level))
                 .font(.caption)
                 .foregroundColor(.secondary)
+                .accessibilityLabel("Audio level")
+                .accessibilityValue(String(format: "%.0f decibels", level))
         }
         .frame(height: 120)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Audio level meter")
+        .accessibilityValue(String(format: "%.0f decibels", level))
     }
 }

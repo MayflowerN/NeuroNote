@@ -10,6 +10,7 @@ import XCTest
 
 final class WhisperServiceTests: XCTestCase {
     
+    /// Saves and loads a value from the Keychain, and confirms correctness
     func testKeychainHelperSaveAndLoad() {
         let testKey = "testAPIKey"
         let testValue = "sk-test-key-1234"
@@ -20,6 +21,7 @@ final class WhisperServiceTests: XCTestCase {
         XCTAssertEqual(loadedValue, testValue, "KeychainHelper should return saved value")
     }
 
+    /// Confirms fallback mechanism works if Whisper API key is missing
     func testWhisperServiceFallbacksToFatalErrorIfKeyMissing() {
         // Setup a fake key so the test doesn't fail
         let testAPIKey = "sk-fake-api-key"

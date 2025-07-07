@@ -8,7 +8,9 @@
 import Foundation
 import Security
 
+/// Utility for securely storing and retrieving strings from the Keychain.
 enum KeychainHelper {
+    /// Saves a string value to the Keychain with the given key.
     static func save(key: String, value: String) {
         let data = Data(value.utf8)
         let query: [String: Any] = [
@@ -17,10 +19,12 @@ enum KeychainHelper {
             kSecValueData as String: data
         ]
 
-        SecItemDelete(query as CFDictionary) 
+        // Delete existing item with same key (if any), then add new
+        SecItemDelete(query as CFDictionary)
         SecItemAdd(query as CFDictionary, nil)
     }
 
+    /// Loads a string value from the Keychain for the given key.
     static func load(key: String) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,

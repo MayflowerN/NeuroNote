@@ -9,12 +9,14 @@ import XCTest
 
 final class RecorderIntegrationTests: XCTestCase {
 
+    /// Verifies that a new recorder is in a non-recording, stopped state
     func testRecorderInitialState() {
         let recorder = Recorder(speechRecognizer: SpeechRecognizer())
         XCTAssertFalse(recorder.recording, "Recorder should not be recording initially")
         XCTAssertEqual(recorder.state, .stopped)
     }
 
+    /// Starts and stops recording, asserting state transitions and flags
     func testRecorderStartStop() async throws {
         let recorder = Recorder(speechRecognizer: SpeechRecognizer())
         try await recorder.startRecording()
@@ -25,11 +27,11 @@ final class RecorderIntegrationTests: XCTestCase {
         XCTAssertEqual(recorder.state, .stopped)
     }
 
+    /// Simulates appending a dummy recording and ensures it is tracked
     func testRecordingAppendsToSession() async throws {
         let recorder = Recorder(speechRecognizer: SpeechRecognizer())
 
         // Instead of waiting for real audio, we simulate an insert
-        // Recordings is a public var so we append a dummy manually
         recorder.recordings.append(Recording(fileURL: URL(fileURLWithPath: "/dev/null")))
 
         XCTAssertGreaterThanOrEqual(recorder.recordings.count, 1, "Should have at least 1 recording session")

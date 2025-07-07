@@ -8,15 +8,18 @@
 import Foundation
 import SwiftData
 
+/// Represents a full recording session (e.g. a complete user session).
 @Model
-class Recording {
+class Recording: Identifiable {
+    @Attribute(.unique) var id: UUID
     var fileURL: URL
     var createdAt: Date
-    
+
     @Relationship(deleteRule: .cascade)
     var segments: [TranscriptionSegment] = []
 
-    init(fileURL: URL, createdAt: Date = .now) {
+    init(id: UUID = UUID(), fileURL: URL, createdAt: Date = .now) {
+        self.id = id
         self.fileURL = fileURL
         self.createdAt = createdAt
     }

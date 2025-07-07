@@ -47,6 +47,7 @@ class Recorder {
     var bitDepth: AVAudioCommonFormat = .pcmFormatInt16
     var numChannels: AVAudioChannelCount = 1
 
+    /// Initializes the Recorder and sets up audio session and engine if microphone permission is granted.
     init(modelContext: ModelContext? = nil, speechRecognizer: SpeechRecognizer? = nil) {
         self.modelContext = modelContext
         self.speechRecognizer = speechRecognizer
@@ -66,6 +67,7 @@ class Recorder {
         }
     }
 
+    /// Configures the AVAudioSession for recording.
     private func setupSession() {
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetooth])
@@ -73,6 +75,7 @@ class Recorder {
         try? session.setActive(true, options: .notifyOthersOnDeactivation)
     }
 
+    /// Prepares the AVAudioEngine with a silent mixer.
     private func setupEngine() {
         engine = AVAudioEngine()
         let inputNode = engine.inputNode
@@ -85,11 +88,13 @@ class Recorder {
         engine.prepare()
     }
 
+    /// Captures the input format of the audio input node.
     private func makeConnections() {
         let inputNode = engine.inputNode
         inputFormat = inputNode.outputFormat(forBus: 0)
     }
 
+    /// Checks if there's enough free disk space.
     private func isDiskSpaceAvailable(minimumFreeMB: Int = 10) -> Bool {
         let fileURL = FileManager.default.temporaryDirectory
         if let values = try? fileURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]),
@@ -99,10 +104,10 @@ class Recorder {
         return false
     }
 
+    /// Begins recording audio and writing to a .caf file.
     func startRecording() throws {
         guard !recording else { return }
         guard isDiskSpaceAvailable() else {
-            print("Not enough disk space.")
             throw RecorderError.insufficientDiskSpace
         }
 
@@ -130,13 +135,12 @@ class Recorder {
             state = .recording
             recording = true
             scheduleNextSegment()
-
         } catch {
-            print("Failed to start engine: \(error.localizedDescription)")
             throw error
         }
     }
 
+    /// Writes an incoming buffer to the current audio file.
     private func writeBuffer(_ buffer: AVAudioPCMBuffer) {
         guard let file = recordingFile else { return }
 
@@ -157,25 +161,26 @@ class Recorder {
                 try file.write(from: buffer)
             }
         } catch {
-            print("Error writing buffer: \(error.localizedDescription)")
             DispatchQueue.main.async { self.stopRecording() }
         }
     }
 
+    /// Sets up a timer to rotate segments every 30 seconds.
     private func scheduleNextSegment() {
         segmentTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
             try? self?.rotateSegment()
         }
     }
 
+    /// Ends current segment and starts a new one.
     private func rotateSegment() throws {
         engine.inputNode.removeTap(onBus: 0)
         try saveCurrentSegment()
-
         fileSegmentIndex += 1
         try startRecording()
     }
 
+    /// Saves the current audio segment to SwiftData and triggers transcription.
     private func saveCurrentSegment() throws {
         guard let file = recordingFile else { return }
 
@@ -197,6 +202,7 @@ class Recorder {
         recordingFile = nil
     }
 
+    /// Stops the engine, saves the last segment, and resets recording state.
     func stopRecording() {
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
@@ -207,16 +213,19 @@ class Recorder {
         recording = false
     }
 
+    /// Pauses the audio engine.
     func pauseRecording() {
         engine.pause()
         state = .paused
     }
 
+    /// Resumes the audio engine.
     func resumeRecording() throws {
         try engine.start()
         state = .recording
     }
 
+    /// Registers for AVAudioSession and AVAudioEngine notifications.
     private func registerForNotifications() {
         let center = NotificationCenter.default
 
@@ -241,6 +250,7 @@ class Recorder {
         }
     }
 
+    /// Handles AVAudioSession interruptions.
     private func handleInterruption(_ notification: Notification) {
         guard let typeValue = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
               let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
@@ -261,20 +271,21 @@ class Recorder {
         }
     }
 
+    /// Handles audio route changes (e.g. headphones unplugged).
     private func handleRouteChange(_ notification: Notification) {
         guard let reasonValue = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
               let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue) else { return }
 
         switch reason {
         case .oldDeviceUnavailable:
-            print("Mic/headphones unplugged")
             pauseRecording()
         case .newDeviceAvailable:
-            print("New mic/headphones plugged in")
+            break
         default: break
         }
     }
 
+    /// Applies pending configuration updates.
     private func handleConfigurationChange() {
         if configChangePending {
             makeConnections()
@@ -282,6 +293,7 @@ class Recorder {
         }
     }
 
+    /// Manually triggers session setup again.
     func setup() {
         AVAudioSession.sharedInstance().requestRecordPermission { granted in
             DispatchQueue.main.async {
