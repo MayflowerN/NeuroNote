@@ -11,14 +11,15 @@ import SwiftData
 
 @Observable
 class SpeechRecognizer {
-    // Stores the latest recognized transcription text
+    // Stores the latest recognized transcription text for live display or debugging
     var recognizedText: String = "No speech recognized"
     
     init() {
         requestAuthorization()
     }
     
-    /// Requests user permission for speech recognition
+    /// Requests user permission for speech recognition via Apple's Speech framework.
+    /// Must be done before attempting any STT (speech-to-text) tasks.
     private func requestAuthorization() {
         SFSpeechRecognizer.requestAuthorization { authStatus in
             DispatchQueue.main.async {
@@ -34,24 +35,27 @@ class SpeechRecognizer {
         }
     }
 
-    /// Starts transcription for a given audio file and segment
+    /// Orchestrates transcription of a saved audio file for a specific segment.
+    /// The logic checks which STT service (Whisper or Apple) to use.
     func transcribeAudioFile(at url: URL, for segment: TranscriptionSegment, in context: ModelContext) {
         print("🎙️ Starting transcription for: \(url.lastPathComponent)")
         Task {
             do {
-                // Toggle between Apple STT and Whisper here if needed
+                // NOTE: Toggle between Apple STT and Whisper based on this boolean.
+                // Currently hardcoded to Apple STT (false branch).
                 if false {
                     try await transcribeWithWhisper(url: url, segment: segment, context: context)
                 } else {
                     try await transcribeWithApple(url: url, segment: segment, context: context)
                 }
             } catch {
+                // If transcription fails, handle retry/fallback behavior
                 await handleTranscriptionFailure(url: url, segment: segment, context: context)
             }
         }
     }
     
-    /// Transcribes audio using OpenAI Whisper API
+    /// Transcribes audio using OpenAI Whisper via backend HTTP request.
     private func transcribeWithWhisper(url: URL, segment: TranscriptionSegment, context: ModelContext) async throws {
         segment.status = .transcribing
         try? context.save()
@@ -64,10 +68,11 @@ class SpeechRecognizer {
         print("Whisper transcribed: \(text)")
     }
 
-    /// Transcribes audio using Apple's built-in speech recognition
+    /// Transcribes audio using Apple's on-device STT engine (SFSpeechRecognizer).
     private func transcribeWithApple(url: URL, segment: TranscriptionSegment, context: ModelContext) async throws {
         try await withCheckedThrowingContinuation { continuation in
-            // Skip live STT logic during unit tests to avoid unnecessary network/system calls
+
+            // When running tests (e.g., in CI), skip real transcription for stability.
             #if DEBUG
             if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
                 print("🧪 Skipping live STT during test")
@@ -79,17 +84,19 @@ class SpeechRecognizer {
             }
             #endif
 
+            // Set up Apple STT recognizer and request
             let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
             let request = SFSpeechURLRecognitionRequest(url: url)
-            request.shouldReportPartialResults = false
+            request.shouldReportPartialResults = false  // we only want final output
 
-            var didFinish = false
+            var didFinish = false  // Ensures continuation is only called once
 
+            // Start recognition task
             let task = recognizer?.recognitionTask(with: request) { result, error in
                 guard !didFinish else { return }
 
                 if let result = result, result.isFinal {
-                    // Success: Save result and complete
+                    // Transcription successful
                     segment.transcriptionText = result.bestTranscription.formattedString
                     segment.status = .completed
                     try? context.save()
@@ -97,13 +104,13 @@ class SpeechRecognizer {
                     continuation.resume()
                     didFinish = true
                 } else if let error = error {
-                    // Failure: Report error
+                    // Transcription failed
                     continuation.resume(throwing: error)
                     didFinish = true
                 }
             }
 
-            // Timeout fallback in case Apple STT does not complete
+            // Safety timeout in case task hangs (e.g. due to silence or system issue)
             DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
                 if !didFinish {
                     print("Forcing task cancel due to no final result")
@@ -115,23 +122,24 @@ class SpeechRecognizer {
         }
     }
 
-    /// Handles transcription failures and applies retry logic with exponential backoff
+    /// Handles retry logic for failed transcriptions using exponential backoff.
+    /// Falls back to Apple STT if Whisper fails too many times.
     private func handleTranscriptionFailure(url: URL, segment: TranscriptionSegment, context: ModelContext) async {
         segment.attemptCount += 1
         print("Transcription failed. Retrying \(segment.attemptCount)...")
         
         if segment.attemptCount >= 5 {
             if segment.useWhisper {
-                // Fallback to Apple STT if Whisper failed too many times
+                // If Whisper failed 5 times, fallback to Apple STT for this segment
                 print("Switching to Apple STT fallback")
                 segment.useWhisper = false
             } else {
-                // Mark as failed if both systems fail too many times
+                // If both Whisper and STT fail repeatedly, mark segment as failed
                 segment.status = .failed
                 print("Max transcription retries reached")
             }
         } else {
-            // Retry after exponential delay
+            // Wait exponentially longer before retrying (e.g. 2, 4, 8 seconds...)
             let delay = pow(2.0, Double(segment.attemptCount))
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             transcribeAudioFile(at: url, for: segment, in: context)
